@@ -21,7 +21,8 @@ void CAR::setup_CAR()
       "Frontblinker",
       "Langsamer",
       "S T O P",
-      "Schneller"};
+      "Schneller",
+      "Ladezustand"};
 
   _carHeight = _carWidth;
   set_size_request(_carWidth, _carHeight);
@@ -58,13 +59,9 @@ void CAR::setup_CAR()
   // The number of pixels to place between children:
   functionFrame->set_border_width(2);
   // Set the frames label
-  functionFrame->set_size_request(50, 100); 
+  functionFrame->set_size_request(50, 100);
   functionFrame->set_hexpand(false);
   functionFrame->set_vexpand(false);
-
-  ///// FONT ////////////////////////////////////
-  Pango::FontDescription fdesc0("Monospace 12");
-  Pango::FontDescription fdesc1("Monospace 8");
 
   ///// VBOX   /////////////////////////////////////
   // Put a vertical box container as the Window contents
@@ -82,7 +79,6 @@ void CAR::setup_CAR()
   grid->set_vexpand(false);
 
   ///// BUTTONS /////////////////////////////////////////////////////////////
-
   uint8_t line = 0;
   for (uint8_t btn = Abblendlicht; btn < no_btn; btn++)
   {
@@ -180,7 +176,25 @@ void CAR::setup_CAR()
   speedFrame->add(*scale);
   fixed->put(*speedFrame, _carWidth - _btnleftEdge, upperEdge);
 
+  ///// BATTERY_LABEL /////////////////////////////////////////////////////////////
+  battery_label = Gtk::manage(new Gtk::Label());
+  battery_label->set_halign(Gtk::ALIGN_START);
+  battery_label->set_valign(Gtk::ALIGN_BASELINE);
+  // Attach the new label to the grid
+  fixed->put(*battery_label, 10, _carHeight + 25);
+
+  call4volt(m_timer_number);
+
   show_all_children();
+
+  ///// START SERIAL_HANDLER /////////////////////////////////////////////////
+  // Creation of a new object prevents long lines and shows us a little
+  // how slots work.  We have 0 parameters and bool as a return value
+  // after calling sigc::bind.
+  sigc::slot<bool()> my_slot = sigc::bind(sigc::mem_fun(*this, &CAR::call4volt), m_timer_number);
+
+  // This is where we connect the slot to the Glib::signal_timeout()
+  auto conn = Glib::signal_timeout().connect(my_slot, timer_value);
 }
 
 // void Frames::sendDirection2CARS(uint8_t _dir, const uint8_t nbr)
@@ -217,7 +231,8 @@ void CAR::on_speed_value_changed()
   pFrame->sendSpeed2CARS(adr); // die maximale Geschwindigkeit ist auf 1000 festgelegt
 }
 
-void CAR::on_stop_func(uint8_t btn_nbr){
+void CAR::on_stop_func(uint8_t btn_nbr)
+{
   if (func_btns[btn_nbr]->on_off == released)
     return;
   func_btns[btn_nbr]->on_off = released;
@@ -302,12 +317,12 @@ void CAR::on_button_pressed(uint8_t btn_nbr)
     {
       // switch on
       func_btns[go_slower]->set_image(*func_btns[9]->shrink_the_pixbuff("go_slower.png"));
-    /*  func_btns[go_slower]->on_off = pressed;
-      func_btns[go_faster]->set_image(*func_btns[11]->shrink_the_pixbuff("normal.png"));
-      func_btns[go_faster]->on_off = released;*/
+      /*  func_btns[go_slower]->on_off = pressed;
+        func_btns[go_faster]->set_image(*func_btns[11]->shrink_the_pixbuff("normal.png"));
+        func_btns[go_faster]->on_off = released;*/
     }
     //
-    m_scale_adjustment->set_value(Lok_speed_dest/m_scale_factor-steps);
+    m_scale_adjustment->set_value(Lok_speed_dest / m_scale_factor - steps);
     m_scale_adjustment->value_changed();
     break;
   // go_faster ********************************************************************
@@ -316,13 +331,10 @@ void CAR::on_button_pressed(uint8_t btn_nbr)
     {
       // switch on
       func_btns[go_faster]->set_image(*func_btns[11]->shrink_the_pixbuff("go_faster.png"));
-/*      func_btns[go_faster]->on_off = pressed;
-      func_btns[go_slower]->set_image(*func_btns[9]->shrink_the_pixbuff("normal.png"));
-      func_btns[go_slower]->on_off = released;*/
     }
     //
-    new_value = Lok_speed_dest/m_scale_factor+steps;
-    if (new_value<40.0)
+    new_value = Lok_speed_dest / m_scale_factor + steps;
+    if (new_value < 40.0)
       new_value = 40.0;
     m_scale_adjustment->set_value(new_value);
     m_scale_adjustment->value_changed();
@@ -331,6 +343,19 @@ void CAR::on_button_pressed(uint8_t btn_nbr)
   default:
     break;
   }
+}
+
+bool CAR::call4volt(int m_timer_number)
+{
+  pFrame->sendFunctions2CARS(Lok_Battery, nbr, 0x00);
+  return TRUE;
+}
+
+void CAR::received_volts(uint8_t v0, uint8_t v1, uint8_t v2)
+{
+  char addrstr[buflng30];
+  g_snprintf(addrstr, buflng30,"Battery: %d.%d%d Volts\n", v0, v1, v2);
+  battery_label->set_label(addrstr);
 }
 
 void CAR::get_data_from_PLAY(Frames *_pFrame, const uint8_t _nbr, const uint16_t _cw, const uint16_t _bE)

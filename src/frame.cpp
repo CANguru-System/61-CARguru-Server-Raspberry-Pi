@@ -45,7 +45,7 @@ Frames::Frames()
     ///// BUTTON START ///////////////////////////////////////////////////////
     button_start = Gtk::manage(new carguruButton());
     button_start->set_label("START");
-    button_start->signal_clicked().connect(sigc::mem_fun(*this, &Frames::on_startPeliCAN));
+    button_start->signal_clicked().connect(sigc::mem_fun(*this, &Frames::on_startCARguru));
     // Attach the new button to the grid
     fixedBackground->put(*button_start, leftEdge, window_height * 0.975);
 
@@ -252,7 +252,7 @@ void callback(GtkWidget *widget, gpointer *data)
     g_print("Hello again - %s was pressed\n", (char *)data);
 }
 
-void Frames::on_startPeliCAN()
+void Frames::on_startCARguru()
 {
     send_a_frame(start);
 }
@@ -398,9 +398,24 @@ void Frames::handleFrame(uint8_t *buffer)
     bool found = false;
     uint16_t adr;
     uint16_t speed;
-    //    printf("CMD: %02X\n", buffer[opCmd]);
+    // printf("CMD: %02X\n", buffer[opCmd]);
     switch (buffer[opCmd])
     {
+    case Lok_Function_R:
+        // printf("LOK: %02X\n", buffer[data4]);
+        if (buffer[data4] == Lok_Battery)
+        {
+            adr = (buffer[data2] << 8) + buffer[data3] - DCC_TRACK;
+            for (auto car : pPlay->v_CAR)
+            {
+                if (car->adr == adr)
+                {
+                    car->received_volts(buffer[data5], buffer[data6], buffer[data7]);
+                }
+            //    printf("Bat: %d.%d%d V\n", buffer[data5], buffer[data6], buffer[data7]);
+            }
+        }
+        break;
     case Lok_Speed_R:
         // 00 (09) D7 15 R [06] 00 00 C0 CA 00 05 00 00
         /*

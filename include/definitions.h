@@ -167,8 +167,9 @@ struct IPv4
 #define Lok_Speed 0x08
 #define Lok_Speed_R Lok_Speed + 1
 #define Lok_Direction 0x0A
-#define Lok_Function 0x0C
 #define SYS_STAT 0x0B // System - Status (sendet geänderte Konfiguration)
+#define Lok_Function 0x0C
+#define Lok_Function_R Lok_Function + 1
 #define ReadConfig 0x0E
 #define ReadConfig_R ReadConfig + 1
 #define WriteConfig 0x10
@@ -205,6 +206,7 @@ struct IPv4
 #define SEND_IP 0x64
 #define SEND_IP_R SEND_IP + 1
 #define INIT_COMPLETE 0x66
+#define Lok_Battery 0x67
 #define CALL4CONNECT 0x88
 #define CALL4CONNECT_R CALL4CONNECT + 0x01
 #define sendCntLokBuffer 0x90

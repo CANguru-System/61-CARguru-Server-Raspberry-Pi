@@ -89,6 +89,7 @@ public:
   virtual ~CAR();
   void get_data_from_PLAY(Frames *_pFrame, const uint8_t _nbr, const uint16_t _cw, const uint16_t _bE);
   void setup_CAR();
+  void received_volts(uint8_t v0, uint8_t v1, uint8_t v2);
 
   uint16_t Lok_speed_dest;
   uint16_t Lok_speed_curr;
@@ -101,6 +102,7 @@ private:
   void on_button_pressed(uint8_t btn_nbr);
   void on_stop_func(uint8_t btn_nbr);
   void on_speed_value_changed();
+  bool call4volt(int m_timer_number);
   Frames *pFrame;
   Gtk::Fixed *fixed;
   Glib::RefPtr<Gtk::Adjustment> m_scale_adjustment;
@@ -110,6 +112,12 @@ private:
   uint16_t _btnleftEdge;
   double m_scale_value;
   std::vector<Gtk::HBox*> v_hBox;
+
+  int m_timer_number = 1;
+  uint16_t timer_value = 5000;
+
+  Gtk::Label *battery_label;
+  Glib::ustring batteryBuffer;
 
 protected:
   uint8_t nbr;
@@ -217,7 +225,7 @@ private:
   void Setup();
   void sendFRAME2Bridge(const uint8_t *buffer);
   void handleFrame(uint8_t *buffer);
-  void on_startPeliCAN();
+  void on_startCARguru();
   void showTextBuffer(const char *buffer);
   void printaFRAME(uint8_t *frame);
   void MSGFromTheBridge(uint8_t msg);
