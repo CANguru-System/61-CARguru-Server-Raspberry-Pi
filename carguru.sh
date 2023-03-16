@@ -1,3 +1,3 @@
 #!/bin/bash
-cd CARguru/61*/build
+cd 61*/build
 ./CARguru
